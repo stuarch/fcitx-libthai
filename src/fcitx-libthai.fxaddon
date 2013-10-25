@@ -1,0 +1,8 @@
+[FcitxAddon]
+Name=fcitx-libthai
+Prefix=LibThai
+Include0="libthai.h"
+Function0=
+Function1=
+Function2=
+Self.Type=FcitxLibThai*

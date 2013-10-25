@@ -1,0 +1,11 @@
+[Addon]
+Name=fcitx-libthai
+_GeneralName=LibThai Addon of Fcitx
+_Comment=
+Category=InputMethod
+IMRegisterMethod=ConfigFile
+Enabled=True
+Library=fcitx-libthai.so
+Type=SharedLibrary
+Dependency=
+Priority=80
