@@ -1,4 +1,5 @@
-include_directories(${LIBTHAI_INCLUDE_DIRS})
+include_directories(${LIBTHAI_INCLUDE_DIRS}
+${LIBICONV_INCLUDE_DIR})
 link_directories(${LIBTHAI_LIBRARY_DIRS})
 # Source files
 set(fcitx_libthai_sources
@@ -18,5 +19,5 @@ fcitx_add_addon_full(libthai
   # LIB_NAME lib_name # module file name (without extension)
   # HEADERS headers.h # extra public headers to install
   # EXTRA_PO extra_files # extra files to translate
-  LINK_LIBS ${LIBTHAI_LIBRARIES} # external libraies to link
+  LINK_LIBS ${LIBTHAI_LIBRARIES} ${LIBICONV_LIBRARIES}# external libraies to link
   SOURCES ${fcitx_libthai_sources})
