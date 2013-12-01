@@ -25,6 +25,7 @@
 #include "thaikb.h"
 #include <fcitx/instance.h>
 #include <thai/thinp.h>
+#include <iconv.h>
 
 #define _(x) dgettext("fcitx-libthai", x)
 #define FALLBACK_BUFF_SIZE 4
@@ -41,6 +42,7 @@ typedef struct {
     FcitxInstance *owner;
     tischar_t  char_buff[FALLBACK_BUFF_SIZE];
     short      buff_tail;
+    iconv_t    conv;
 } FcitxLibThai;
 
 CONFIG_BINDING_DECLARE(FcitxLibThaiConfig);

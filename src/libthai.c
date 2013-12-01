@@ -67,9 +67,16 @@ FcitxLibThaiCreate(FcitxInstance *instance)
     FcitxLibThai *libthai = fcitx_utils_new(FcitxLibThai);
     bindtextdomain("fcitx-libthai", LOCALEDIR);
     libthai->owner = instance;
-    libthai->conv = iconv_open("TIS-620", "UTF-8");
+    libthai->conv = iconv_open("TIS-620", "UTF-8");    
 
     if (libthai->conv == (iconv_t)-1)
+    {
+        free(libthai);
+        return NULL;
+    }
+    libthai->convToUTF8 = iconv_open("UTF-8", "TIS-620");    
+
+    if (libthai->convToUTF8 == (iconv_t)-1)
     {
         free(libthai);
         return NULL;
@@ -100,8 +107,8 @@ FcitxLibThaiDestroy(void *arg)
 static void
 FcitxLibThaiReloadConfig(void *arg)
 {
-    FcitxLibThai *libthai = FcitxLibThai*)arg;
-    LibThaiLoadConfig(&libthai->config); (
+    FcitxLibThai *libthai = (FcitxLibThai*)arg;
+    LibThaiLoadConfig(&libthai->config);
 }
 
     boolean FcitxLibThaiInit(void* arg)
@@ -168,7 +175,7 @@ FcitxLibThaiGetPrevChar (FcitxLibThai *libthai)
         const char *s;
 
 
-        if (!FcitxInstanceGetSurroundingText ((libthai->owner),
+        if (!FcitxInstanceGetSurroundingText ((libthai->owner),FcitxInstanceGetCurrentIC(libthai->owner),
                                               &surrounding, &cursor_pos, &anchor_pos))
         {
             break;
@@ -179,7 +186,7 @@ FcitxLibThaiGetPrevChar (FcitxLibThai *libthai)
         cursor_pos = fcitx_utf8_get_nth_char (s, cursor_pos) - s;
         while (*s)
         {
-            const gchar *t;
+            const char *t;
             char *inbuf = s;
             char *outbuf = tis_text;
             size_t inbytesleft = cursor_pos;
@@ -211,6 +218,24 @@ FcitxLibThaiGetPrevChar (FcitxLibThai *libthai)
     return libthai->char_buff[libthai->buff_tail - 1];
 }
 
+static boolean
+FcitxLibThaiCommitChar (FcitxLibThai *libthai,
+                                  tischar_t *s, size len)
+{
+  char    *utf8= fcitx_utils_malloc0( sizeofchar);
+
+  utf8 = convert ((char *) s, len, "UTF-8", "TIS-620", NULL, NULL, NULL);
+  if (!utf8)
+    return FALSE;
+
+  text = ibus_text_new_from_string (utf8);
+  free (utf8);
+
+  ibus_engine_commit_text (IBUS_ENGINE (libthai_engine), text);
+
+  return TRUE;
+}
+
 INPUT_RETURN_VALUE FcitxLibThaiDoInput(void* arg, FcitxKeySym  sym, unsigned int state)
 {
     FcitxLibThai *libthai = (FcitxLibThai*)arg;
@@ -240,7 +265,7 @@ INPUT_RETURN_VALUE FcitxLibThaiDoInput(void* arg, FcitxKeySym  sym, unsigned int
     /* No correction -> just reject or commit */
     if (!libthai->config.do_correct)
     {
-        thchar_t prev_char = ibus_libthai_engine_get_prev_char (libthai_engine);
+        thchar_t prev_char = FcitxLibThaiGetPrevChar (libthai);
 
         if (!th_isaccept (prev_char, new_char, libthai->config.isc_mode))
             goto reject_char;
