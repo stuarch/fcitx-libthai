@@ -219,21 +219,27 @@ FcitxLibThaiGetPrevChar (FcitxLibThai *libthai)
 }
 
 static boolean
-FcitxLibThaiCommitChar (FcitxLibThai *libthai,
-                                  tischar_t *s, size len)
+FcitxLibThaiCommitChar(FcitxLibThai *libthai,
+                       tischar_t *s, size_t len)
 {
-  char    *utf8= fcitx_utils_malloc0( sizeofchar);
+    char *utf8 = fcitx_utils_malloc0(len * UTF8_MAX_LENGTH);
+    char *outbuf = utf8;
+    size_t inbytesleft = len;
+    size_t outbytesleft = len * UTF8_MAX_LENGTH;
 
-  utf8 = convert ((char *) s, len, "UTF-8", "TIS-620", NULL, NULL, NULL);
-  if (!utf8)
-    return FALSE;
+    iconv(libthai->convToUTF8, &s, &inbytesleft, outbuf, &outbytesleft);
+    if (inbytesleft == 0) {
+        free(utf8);
+        return false;
+    }
 
-  text = ibus_text_new_from_string (utf8);
-  free (utf8);
+    FcitxInstanceCommitString(libthai->owner,
+                              FcitxInstanceGetCurrentIC(libthai->owner),
+                              utf8);
 
-  ibus_engine_commit_text (IBUS_ENGINE (libthai_engine), text);
+    free(utf8);
 
-  return TRUE;
+    return true;
 }
 
 INPUT_RETURN_VALUE FcitxLibThaiDoInput(void* arg, FcitxKeySym  sym, unsigned int state)
@@ -270,7 +276,7 @@ INPUT_RETURN_VALUE FcitxLibThaiDoInput(void* arg, FcitxKeySym  sym, unsigned int
         if (!th_isaccept (prev_char, new_char, libthai->config.isc_mode))
             goto reject_char;
 
-        return ibus_libthai_engine_commit_chars (libthai_engine, &new_char, 1);
+        return FcitxLibThaiCommitChar (libthai, &new_char, 1);
     }
 
     ibus_libthai_engine_get_prev_cell (libthai_engine, &context_cell);
@@ -314,6 +320,4 @@ INPUT_RETURN_VALUE FcitxLibThaiGetCandWords(void* arg)
 }
 
 #include "fcitx-libthai-addfunctions.h"
-
-
 
